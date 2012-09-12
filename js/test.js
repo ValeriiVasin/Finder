@@ -12,13 +12,13 @@ test('Assign options as part of constructor', function () {
     var finder;
 
     finder = new Finder();
-    deepEqual(finder._options, {multi: false, translit: false, ignorecase: false, strict: false}, 'Default options should be correct');
+    deepEqual(finder._options, {multi: false, translit: false, ignorecase: false, strict: true, smart: false}, 'Default options should be correct');
 
     finder = new Finder({multi: true});
-    deepEqual(finder._options, {multi: true, translit: false, ignorecase: false, strict: false}, 'Options could be provided as single option of the constructor');
+    deepEqual(finder._options, {multi: true, translit: false, ignorecase: false, strict: true, smart: false}, 'Options could be provided as single option of the constructor');
 
     finder = new Finder('Дискотека', {translit: true});
-    deepEqual(finder._options, {multi: false, translit: true, ignorecase: false, strict: false}, 'Options could be provided as second argument');
+    deepEqual(finder._options, {multi: false, translit: true, ignorecase: false, strict: true, smart: false}, 'Options could be provided as second argument');
 });
 test('option() method', function () {
     var finder;
@@ -34,7 +34,7 @@ test('options() method', function () {
 
     finder = new Finder();
     finder.options({ignorecase: true, multi: true});
-    deepEqual(finder._options, {multi: true, translit: false, ignorecase: true, strict: false}, 'Options should be changed');
+    deepEqual(finder._options, {multi: true, translit: false, ignorecase: true, strict: true, smart: false}, 'Options should be changed');
 
     throws(function () { finder.options(true); }, 'Options should be an object');
 });
@@ -81,9 +81,66 @@ module('strict', {
         window.finder = new Finder('скова', {strict: true});
     }
 });
-
 test('strict mode', function () {
-    ok(finder.test('Дискотека Авария'));
-    finder.option('strict', false);
     equal(finder.test('Дискотека Авария'), false);
+    finder.option('strict', false);
+    ok(finder.test('Дискотека Авария'));
+});
+
+// multi mode
+module('multi', {
+    setup: function () {
+        window.finder = new Finder('Lbcrjntrf', {multi: true});
+    }
+});
+test('multi mode', function () {
+    ok(finder.test('Дискотека авария'));
+    finder.option('multi', false);
+    equal(finder.test('Дискотека авария'), false);
+});
+
+// translit mode
+module('translit', {
+    setup: function () {
+        window.finder = new Finder('авария', {translit: true});
+    }
+});
+test('translit mode', function () {
+    ok(finder.test('Diskoteka avarija'));
+    ok(finder.test('Дискотека авария'));
+    finder.option('translit', false);
+    equal(finder.test('Diskoteka avarija'), false);
+});
+
+module('smart', {
+    setup: function () {
+        window.finder = new Finder('[jkkb', { translit: true, ignorecase: true, multi: true });
+    }
+});
+test('smart mode', function () {
+    ok(finder.test('Holly Dolly') === false);
+    finder.option('smart', true);
+    ok(finder.test('Holly Dolly'));
+});
+
+module('Options conjunction');
+test('ignorecase + translit', function () {
+    var finder = new Finder('скорпионс');
+    ok(finder.test('Scorpions – Wind of change') === false);
+    finder.options({ ignorecase: true, translit: true });
+    ok(finder.test('Scorpions – Wind of change') === true);
+});
+test('ignorecase + multi', function () {
+    var finder = new Finder('ылщкзшщты');
+    ok(finder.test('Scorpions – Wind of change') === false);
+    finder.options({ multi: true, ignorecase: true });
+    ok(finder.test('Scorpions – Wind of change') === true);
+});
+test('ignorecase + strict', function () {
+    var finder = new Finder('wind change');
+    equal(finder.test('Scorpions – Wind of change'), false);
+    finder.options({ ignorecase: true, strict: false });
+    equal(finder.test('Scorpions – Wind of change'), true);
+    finder.options({ ignorecase: true, strict: true });
+    equal(finder.test('Scorpions – Wind of change'), false);
 });

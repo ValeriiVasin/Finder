@@ -14,9 +14,18 @@ var __extend = function (a, b) {
     }
 
     return a;
-};
+},
 
-var Finder = function (source, options) {
+/**
+ * Escape string for creating correct regexp from it
+ * @param  {String} s Unescaped string
+ * @return {String}   Escaped string
+ */
+__escape = function(s) {
+    return s.replace(/[-/\\^$*+?.()[\]{}]/g, '\\$&');
+},
+
+Finder = function (source, options) {
     "use strict";
 
     // compilation state: true, if regexp has been compiled before
@@ -28,13 +37,15 @@ var Finder = function (source, options) {
     // options hash with default value
     this._options = {
         // usual search, no github-like
-        strict: false,
+        strict: true,
         // case insensetive
         ignorecase: false,
         // support transliteration en <=> ru
         translit: false,
         // no matter what keyboard is active
-        multi: false
+        multi: false,
+        // transliterate after applying multi option (vk like)
+        smart: false
     };
 
     // check initial arguments
@@ -90,7 +101,16 @@ Finder.prototype.options = function (options) {
 
 Finder.prototype.compile = function (source, options) {
     var parsedSource = null,
-        joinSymbol = '';
+        joinSymbol = '',
+        that = this,
+        letters = {
+            source: null,
+            multi: null,
+            translit: null,
+            smart: null,
+
+            result: null
+        };
 
     // check initial arguments
     if (typeof source === 'object') {
@@ -107,13 +127,70 @@ Finder.prototype.compile = function (source, options) {
     }
 
     // compilation
-    parsedSource = this._source.split('');
+    letters.source = this._source.split('');
 
-    if (this._options.strict) {
+    if (this._options.multi) {
+        letters.multi = letters.source.map(function (symbol) {
+            var s = that.multiHash[symbol];
+            return s ? s : symbol;
+        });
+    }
+
+    if (this._options.translit) {
+        letters.translit = letters.source.map(function (symbol) {
+            var s = that.translitHash[symbol];
+            return s ? s : symbol;
+        });
+    }
+
+    if (this._options.smart && this._options.multi && this._options.translit) {
+        letters.smart = letters.multi.map(function (symbol) {
+            var s = that.translitHash[symbol];
+            return s ? s : symbol;
+        });
+    }
+
+    // mix letters
+    letters.result = letters.source.map(function (symbol, index) {
+        var result = [],
+            quickSearch = {},
+            letter;
+
+        result.push(symbol);
+        quickSearch[symbol] = true;
+
+        if (letters.multi) {
+            letter = letters.multi[index];
+            if (!quickSearch[letter]) {
+                result.push(letter);
+                quickSearch[letter] = letter;
+            }
+        }
+
+        if (letters.translit) {
+            letter = letters.translit[index];
+            if (!quickSearch[letter]) {
+                result.push(letter);
+                quickSearch[letter] = letter;
+            }
+        }
+
+        if (letters.smart) {
+            letter = letters.smart[index];
+            if (!quickSearch[letter]) {
+                result.push(letter);
+                quickSearch[letter] = letter;
+            }
+        }
+
+        return result.map(__escape).join('|');
+    });
+
+    if (this._options.strict === false) {
         joinSymbol = '.*';
     }
 
-    this._regexp = new RegExp(parsedSource.join(joinSymbol), this._options.ignorecase ? 'i' : '');
+    this._regexp = new RegExp(letters.result.join(joinSymbol), this._options.ignorecase ? 'i' : '');
     this._compiled = true;
     return this;
 };
@@ -137,7 +214,7 @@ Finder.prototype.translitHash = {
     'ё': 'jo',  'Ё': 'Jo',
     'ж': 'zh',  'Ж': 'Zh',
     'з': 'z',   'З': 'Z',
-    'и': 'i',   'И': 'I',
+    'и': 'i|y', 'И': 'I|Y',
     'й': 'j',   'Й': 'J',
     'к': 'k',   'К': 'K',
     'л': 'l',   'Л': 'L',
@@ -198,8 +275,8 @@ Finder.prototype.multiHash = {
     'г': 'u',   'Г': 'U',
     'д': 'l',   'Д': 'L',
     'е': 't',   'Е': 'T',
-    'ё': '\~',  'Ё': '\~',
-    'ж': ';',   'Ж': '\:',
+    'ё': '~',   'Ё': '~',
+    'ж': ';',   'Ж': ':',
     'з': 'p',   'З': 'P',
     'и': 'b',   'И': 'B',
     'й': 'q',   'Й': 'Q',
@@ -214,16 +291,16 @@ Finder.prototype.multiHash = {
     'т': 'n',   'Т': 'N',
     'у': 'e',   'У': 'E',
     'ф': 'a',   'Ф': 'A',
-    'х': '\]',  'Х': '\{',
+    'х': ']',   'Х': '{',
     'ц': 'w',   'Ц': 'W',
     'ч': 'x',   'Ч': 'X',
     'ш': 'i',   'Ш': 'I',
     'щ': 'o',   'Щ': 'O',
-    'ъ': '\]',  'Ъ': '\}',
+    'ъ': ']',   'Ъ': '}',
     'ы': 's',   'Ы': 'S',
     'ь': 'm',   'Ь': "M",
-    'э': '\'',  'Э': '\"',
-    'ю': '\.',  'Ю': '\>',
+    'э': '\'',  'Э': '"',
+    'ю': '.',   'Ю': '>',
     'я': 'z',   'Я': 'Z',
     // English
     'a': 'ф',   'A': 'Ф',
@@ -251,5 +328,9 @@ Finder.prototype.multiHash = {
     'w': 'ц',   'W': 'Ц',
     'x': 'ч',   'X': 'Ч',
     'y': 'н',   'Y': 'Н',
-    'z': 'я',   'Z': 'Я'
+    'z': 'я',   'Z': 'Я',
+
+    '[':'х',    '{': 'Х',
+    ']':'ъ',    '}': 'Ъ',
+
 };
