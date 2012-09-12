@@ -2,7 +2,7 @@ module('Extend function');
 test('Correctness of extending', function () {
     var a = {hello: 'world'},
         b = {world: 'hello'},
-        obj = __extend(a, b);
+        obj = Finder.prototype.__extend(a, b);
 
     deepEqual(obj, { hello: 'world', world: 'hello' }, 'Objects should be the same in value');
 });

@@ -1,31 +1,4 @@
-/**
- * Extend a from b
- * @param  {Object} a Extensible object
- * @param  {Object} b Some object
- * @return {Object}   Object a with updated properties from b
- */
-var __extend = function (a, b) {
-    var slice = Array.prototype.slice,
-        key;
-    for (key in b) {
-        if (b.hasOwnProperty(key)) {
-            a[key] = b[key];
-        }
-    }
-
-    return a;
-},
-
-/**
- * Escape string for creating correct regexp from it
- * @param  {String} s Unescaped string
- * @return {String}   Escaped string
- */
-__escape = function(s) {
-    return s.replace(/[-/\\^$*+?.()[\]{}]/g, '\\$&');
-},
-
-Finder = function (source, options) {
+var Finder = function (source, options) {
     "use strict";
 
     // compilation state: true, if regexp has been compiled before
@@ -57,9 +30,36 @@ Finder = function (source, options) {
     this._source = source ? source : '';
 
     if (options) {
-        __extend(this._options, options);
+        this.__extend(this._options, options);
     }
 
+};
+
+/**
+ * Extend a from b
+ * @param  {Object} a Extensible object
+ * @param  {Object} b Some object
+ * @return {Object}   Object a with updated properties from b
+ */
+Finder.prototype.__extend = function (a, b) {
+    var slice = Array.prototype.slice,
+        key;
+    for (key in b) {
+        if (b.hasOwnProperty(key)) {
+            a[key] = b[key];
+        }
+    }
+
+    return a;
+};
+
+/**
+ * Escape string for creating correct regexp from it
+ * @param  {String} s Unescaped string
+ * @return {String}   Escaped string
+ */
+Finder.prototype.__escape = function (s) {
+    return s.replace(/[-/\\^$*+?.()[\]{}]/g, '\\$&');
 };
 
 /**
@@ -94,7 +94,7 @@ Finder.prototype.options = function (options) {
     if (typeof options !== 'object') {
         throw new Error('Options should be an object');
     }
-    __extend(this._options, options);
+    this.__extend(this._options, options);
     this.compile();
     return this;
 };
@@ -123,7 +123,7 @@ Finder.prototype.compile = function (source, options) {
     }
 
     if (options) {
-        __extend(this._options, options);
+        this.__extend(this._options, options);
     }
 
     // compilation
@@ -183,7 +183,7 @@ Finder.prototype.compile = function (source, options) {
             }
         }
 
-        return result.map(__escape).join('|');
+        return result.map(that.__escape).join('|');
     });
 
     if (this._options.strict === false) {
