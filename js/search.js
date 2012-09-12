@@ -183,7 +183,7 @@ Finder.prototype.compile = function (source, options) {
             }
         }
 
-        return result.map(that.__escape).join('|');
+        return '(?:' + result.map(that.__escape).join('|') + ')';
     });
 
     if (this._options.strict === false) {
@@ -216,7 +216,7 @@ Finder.prototype.translitHash = {
     'з': 'z',   'З': 'Z',
     'и': 'i|y', 'И': 'I|Y',
     'й': 'j',   'Й': 'J',
-    'к': 'k',   'К': 'K',
+    'к': 'k|c', 'К': 'K|C',
     'л': 'l',   'Л': 'L',
     'м': 'm',   'М': 'M',
     'н': 'n',   'Н': 'N',
@@ -241,7 +241,7 @@ Finder.prototype.translitHash = {
     // English
     'a': 'а',   'A': 'А',
     'b': 'б',   'B': 'Б',
-    'c': 'с',   'C': 'С',
+    'c': 'с|к', 'C': 'С|К',
     'd': 'д',   'D': 'Д',
     'e': 'е',   'E': 'Е',
     'f': 'ф',   'F': 'Ф',

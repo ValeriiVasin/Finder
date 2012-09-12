@@ -131,7 +131,7 @@ test('ignorecase + translit', function () {
     ok(finder.test('Scorpions – Wind of change') === true);
 });
 test('ignorecase + multi', function () {
-    var finder = new Finder('ылщкзшщты');
+    var finder = new Finder('ысщкзшщты');
     ok(finder.test('Scorpions – Wind of change') === false);
     finder.options({ multi: true, ignorecase: true });
     ok(finder.test('Scorpions – Wind of change') === true);
