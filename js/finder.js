@@ -55,6 +55,7 @@ Finder.prototype.__extend = function (a, b) {
 
 /**
  * Escape string for creating correct regexp from it
+ * Notice: symbol | doesn't escape, cuz it's 'special' in our case
  * @param  {String} s Unescaped string
  * @return {String}   Escaped string
  */
