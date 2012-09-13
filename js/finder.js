@@ -78,7 +78,7 @@ Finder.prototype.source = function () {
  * @return {Object}        Current object
  */
 Finder.prototype.option = function (option, value) {
-    if (value === undefined) {
+    if (typeof value === 'undefined') {
         throw new Error('Option value should be provided');
     }
     this._options[option] = value;
